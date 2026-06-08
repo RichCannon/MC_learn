@@ -1,8 +1,6 @@
 #include <Arduino.h>
 #include <Preferences.h>
 
-Preferences preferences;
-
 // put function declarations here:
 
 #define LED_RED 13
@@ -69,7 +67,6 @@ void registerButtonCheck(Button *btn)
   const bool buttonState = digitalRead(btn->pin);
   if (millis() - btn->ts > BUTTON_ERROR_PREVENT_DELAY)
   {
-    btn->button_state = buttonState;
     btn->ts = millis();
     if (buttonState == LOW)
     {
@@ -93,9 +90,6 @@ void setup()
   Serial.begin(115200);
   delay(2000);
 
-  preferences.begin("my-app", false);
-  target_code = preferences.getUInt("target_code", 0b0110);
-
   pinMode(LED_RED, OUTPUT);
   pinMode(LED_GREEN, OUTPUT);
 
@@ -105,13 +99,6 @@ void setup()
   // Disable built in LED
   digitalWrite(LED_BUILTIN, LOW);
 }
-
-const uint8_t double_hold_check_cycles_success = 15; // 3000 ms / 200 ms = 15;
-uint32_t double_hold_check_ts = millis();
-// uint32_t double_hold_button_delay = 200;
-// uint32_t double_hold_ts = millis();
-uint8_t double_hold_check_cycles = 0;
-bool code_reset_enabled = false;
 
 void loop()
 {
@@ -126,76 +113,26 @@ void loop()
   registerButtonCheck(&btn1);
   registerButtonCheck(&btn2);
 
-  if (code_reset_enabled)
+  if (button_presses >= 4)
   {
-    if (button_presses >= 4)
+    Serial.print("Full input value: ");
+    Serial.println(input_sequence, BIN);
+    if (input_sequence == target_code)
     {
-      target_code = input_sequence;
-      preferences.putUInt("target_code", target_code);
-      code_reset_enabled = false;
-      resetSequenceEntering();
-      digitalWrite(LED_RED, LOW);
+      Serial.println("CORRECT CODE");
       blinkWithLed(LED_GREEN);
-    }
-  }
-  else
-  {
-    if (btn1.button_state == LOW && btn2.button_state == LOW)
-    {
-      if (millis() - double_hold_check_ts > 200)
-      {
-        resetSequenceEntering();
-        double_hold_check_ts = millis();
-        if (double_hold_check_cycles_success <= double_hold_check_cycles)
-        {
-          double_hold_check_cycles = 0;
-          Serial.println("Code change request");
-          code_reset_enabled = true;
-          uint8_t i = 0;
-          while (BLINKS_COUNT > i)
-          {
-            i++;
-            digitalWrite(LED_GREEN, HIGH);
-            digitalWrite(LED_RED, HIGH);
-            delay(BLINKS_SPEED);
-            digitalWrite(LED_GREEN, LOW);
-            digitalWrite(LED_RED, LOW);
-            delay(BLINKS_SPEED);
-          };
-          digitalWrite(LED_GREEN, HIGH);
-          digitalWrite(LED_RED, HIGH);
-        }
-        else
-        {
-          double_hold_check_cycles++;
-        }
-      }
     }
     else
     {
-
-      if (button_presses >= 4)
-      {
-        Serial.print("Full input value: ");
-        Serial.println(input_sequence, BIN);
-        if (input_sequence == target_code)
-        {
-          Serial.println("CORRECT CODE");
-          blinkWithLed(LED_GREEN);
-        }
-        else
-        {
-          Serial.println("WRONG CODE");
-          blinkWithLed(LED_RED);
-        }
-        resetSequenceEntering();
-      }
-
-      if (millis() - ts > DELAY_BEFORE_CODE_RESET && button_presses != 0)
-      {
-        resetSequenceEntering();
-        blinkWithLed(LED_RED);
-      }
+      Serial.println("WRONG CODE");
+      blinkWithLed(LED_RED);
     }
+    resetSequenceEntering();
+  }
+
+  if (millis() - ts > DELAY_BEFORE_CODE_RESET && button_presses != 0)
+  {
+    resetSequenceEntering();
+    blinkWithLed(LED_RED);
   }
 }

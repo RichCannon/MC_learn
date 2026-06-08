@@ -14,6 +14,9 @@ const uint8_t BUTTON_ERROR_PREVENT_DELAY = 100;
 const uint16_t DELAY_BEFORE_CODE_RESET = 5000;
 const uint8_t BLINKS_SPEED = 200;
 const uint8_t BLINKS_COUNT = 3;
+const uint8_t double_hold_check_cycles_success = 15; // 3000 ms / 200 ms = 15;
+
+const uint16_t LOG_DELAY = 300;
 
 const bool BUTTON_A_VALUE = 0;
 const bool BUTTON_B_VALUE = 1;
@@ -23,32 +26,36 @@ typedef struct
   uint8_t pin;
   bool input_value;
   bool button_state;
+  bool prev_button_state;
   uint32_t ts;
 } Button;
 
-uint8_t changeInputValue(uint8_t input_value);
+void changeInputValue(uint8_t input_value);
 void blinkWithLed(uint8_t LED_PIN);
 void registerButtonCheck(Button *btn);
 void resetSequenceEntering();
 
-uint8_t target_code; // Default code value
+uint8_t target_code;
 uint8_t input_sequence = 0;
 uint8_t button_presses = 0;
+uint32_t test_ts = millis();
+uint32_t double_hold_check_ts = millis();
+uint8_t double_hold_check_cycles = 0;
+bool code_reset_enabled = false;
 
 uint32_t ts = millis();
+
 Button btn1 = {
     BUTTON_1_PIN,
-    BUTTON_A_VALUE,
     HIGH,
     0,
 };
 Button btn2 = {BUTTON_2_PIN, BUTTON_B_VALUE, HIGH, 0};
 
-uint8_t changeInputValue(uint8_t input_value)
+void changeInputValue(uint8_t input_value)
 {
   input_sequence = (input_sequence << 1) | input_value;
   button_presses++;
-  return input_sequence;
 }
 
 void blinkWithLed(uint8_t LED_PIN)
@@ -69,9 +76,10 @@ void registerButtonCheck(Button *btn)
   const bool buttonState = digitalRead(btn->pin);
   if (millis() - btn->ts > BUTTON_ERROR_PREVENT_DELAY)
   {
+    btn->prev_button_state = btn->button_state;
     btn->button_state = buttonState;
     btn->ts = millis();
-    if (buttonState == LOW)
+    if (buttonState == LOW && btn->prev_button_state == HIGH)
     {
       ts = millis(); // Reset the global timeout for DELAY_BEFORE_CODE_RESET
       changeInputValue(btn->input_value);
@@ -84,9 +92,6 @@ void resetSequenceEntering()
   input_sequence = 0;
   button_presses = 0;
 }
-
-uint32_t test_ts = millis();
-const uint16_t LOG_DELAY = 300;
 
 void setup()
 {
@@ -106,13 +111,6 @@ void setup()
   digitalWrite(LED_BUILTIN, LOW);
 }
 
-const uint8_t double_hold_check_cycles_success = 15; // 3000 ms / 200 ms = 15;
-uint32_t double_hold_check_ts = millis();
-// uint32_t double_hold_button_delay = 200;
-// uint32_t double_hold_ts = millis();
-uint8_t double_hold_check_cycles = 0;
-bool code_reset_enabled = false;
-
 void loop()
 {
   // Log input input_value into serial monitor
@@ -121,6 +119,8 @@ void loop()
     test_ts = millis();
     Serial.print("Input value: ");
     Serial.println(input_sequence, BIN);
+    Serial.print("Button pressed value: ");
+    Serial.println(button_presses);
   }
 
   registerButtonCheck(&btn1);

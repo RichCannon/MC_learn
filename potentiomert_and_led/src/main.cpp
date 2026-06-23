@@ -16,7 +16,7 @@ public:
   static constexpr uint32_t PWM_FREQ = 5000;
   static constexpr uint8_t PWM_RESOLUTION = 8;
 };
-hw_timer_s *adcTimer = NULL;
+hw_timer_s *ventTimer = NULL;
 
 volatile bool readyToRead = false;
 uint32_t potValue = 0;
@@ -37,11 +37,11 @@ void setup()
 
   ledcAttachPin(AppConfig::LED_PIN_OUTPUT, AppConfig::PWM_CHANNEL);
 
-  adcTimer = timerBegin(0, 80, true);
+  ventTimer = timerBegin(0, 80, true);
 
-  timerAttachInterrupt(adcTimer, &onTimer, true);
-  timerAlarmWrite(adcTimer, 20000, true);
-  timerAlarmEnable(adcTimer);
+  timerAttachInterrupt(ventTimer, &onTimer, true);
+  timerAlarmWrite(ventTimer, 20000, true);
+  timerAlarmEnable(ventTimer);
 }
 
 void loop()

@@ -89,8 +89,6 @@ void loop()
 
 // ========== TASK 3 =============
 
-// #include <Arduino.h>
-
 // class AppConfig
 // {
 // public:
@@ -130,8 +128,6 @@ void loop()
 // }
 
 // ========== TASK 4 =============
-
-// #include <Arduino.h>
 
 // class AppConfig
 // {
@@ -203,23 +199,24 @@ void loop()
 //       {
 //         buttonState_ = ButtonState::GOING_UP;
 //         ts_ = millis();
-//       case ButtonState::GOING_UP:
-//         if (currentTs - ts_ >= delay_)
+//       }
+//       break;
+//     case ButtonState::GOING_UP:
+//       if (currentTs - ts_ >= delay_)
+//       {
+//         if (isPressed)
 //         {
-//           if (isPressed)
-//           {
-//             buttonState_ = ButtonState::DOWN;
-//           }
-//           else
-//           {
-//             buttonState_ = ButtonState::UP;
-//           }
-//           break;
+//           buttonState_ = ButtonState::DOWN;
 //         }
-
-//       default:
+//         else
+//         {
+//           buttonState_ = ButtonState::UP;
+//         }
 //         break;
 //       }
+
+//     default:
+//       break;
 //     }
 //   }
 

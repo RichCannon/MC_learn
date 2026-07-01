@@ -19,7 +19,7 @@ public:
 hw_timer_s *ventTimer = NULL;
 
 volatile bool readyToRead = false;
-uint32_t potValue = 0;
+uint32_t rawValue = 0;
 
 void IRAM_ATTR onTimer()
 {
@@ -49,7 +49,7 @@ void loop()
   if (readyToRead)
   {
     readyToRead = false;
-    potValue = analogRead(AppConfig::PIN_INPUT);
-    ledcWrite(AppConfig::PWM_CHANNEL, potValue);
+    rawValue = analogRead(AppConfig::PIN_INPUT);
+    ledcWrite(AppConfig::PWM_CHANNEL, rawValue);
   }
 }

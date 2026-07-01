@@ -164,12 +164,12 @@ void loop()
 
 //   void init()
 //   {
-//     pinMode(AppConfig::BUTTON_PIN, INPUT_PULLUP);
+//     pinMode(pin_, INPUT_PULLUP);
 //   }
 
 //   void listen()
 //   {
-//     const uint32_t isPressed = (digitalRead(pin_) == LOW);
+//     const bool isPressed = (digitalRead(pin_) == LOW);
 //     const uint32_t currentTs = millis();
 //     prevButtonState_ = buttonState_;
 //     switch (buttonState_)
@@ -192,8 +192,8 @@ void loop()
 //         {
 //           buttonState_ = ButtonState::UP;
 //         }
-//         break;
 //       }
+//         break;
 //     case ButtonState::DOWN:
 //       if (!isPressed)
 //       {
@@ -212,8 +212,8 @@ void loop()
 //         {
 //           buttonState_ = ButtonState::UP;
 //         }
-//         break;
 //       }
+//         break;
 
 //     default:
 //       break;

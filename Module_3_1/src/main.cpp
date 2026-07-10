@@ -10,8 +10,8 @@ namespace AppConfig
 {
     namespace Pins
     {
-        constexpr uint8_t PIN_INPUT = 4;
-        constexpr uint8_t PIN_OUT = 17;
+        constexpr gpio_num_t PIN_INPUT = 4;
+        constexpr gpio_num_t PIN_OUT = 17;
 
     }
     namespace System

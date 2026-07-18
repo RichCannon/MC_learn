@@ -24,7 +24,7 @@ namespace AppConfig
         constexpr ledc_mode_t SPEED_MODE = LEDC_LOW_SPEED_MODE;
         constexpr ledc_timer_bit_t DUTY_RES = LEDC_TIMER_10_BIT;
         constexpr ledc_timer_t TIMER = LEDC_TIMER_0;
-        constexpr ledc_channel_t CHANNEL_0 = LEDC_CHANNEL_0;
+        constexpr ledc_channel_t CHANNEL = LEDC_CHANNEL_0;
         constexpr ledc_channel_t CHANNEL_1 = LEDC_CHANNEL_1;
         constexpr ledc_clk_cfg_t CLK_CFG = LEDC_AUTO_CLK;
         constexpr ledc_intr_type_t INTR_TYPE = LEDC_INTR_DISABLE;

@@ -32,8 +32,8 @@ extern "C" void app_main(void)
 
         int dutyCycle = voltage / 4;
 
-        ledc_set_duty(AppConfig::PWM::SPEED_MODE, AppConfig::PWM::CHANNEL_0, dutyCycle);
-        ledc_update_duty(AppConfig::PWM::SPEED_MODE, AppConfig::PWM::CHANNEL_0);
+        ledc_set_duty(AppConfig::PWM::SPEED_MODE, AppConfig::PWM::CHANNEL, dutyCycle);
+        ledc_update_duty(AppConfig::PWM::SPEED_MODE, AppConfig::PWM::CHANNEL);
         ledc_set_duty(AppConfig::PWM::SPEED_MODE, AppConfig::PWM::CHANNEL_1, dutyCycle);
         ledc_update_duty(AppConfig::PWM::SPEED_MODE, AppConfig::PWM::CHANNEL_1);
 

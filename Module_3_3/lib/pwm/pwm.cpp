@@ -8,15 +8,14 @@ void pwm_init(uint8_t PWM_PIN1, uint8_t PWM_PIN2)
       .timer_num = AppConfig::PWM::TIMER,
       .freq_hz = AppConfig::PWM::FREQ_HZ,
       .clk_cfg = AppConfig::PWM::CLK_CFG,
-      .deconfigure = false
-  };
+      .deconfigure = false};
 
   ledc_timer_config(&timer_config);
 
   ledc_channel_config_t channel_1_config = {
       .gpio_num = PWM_PIN1,
       .speed_mode = AppConfig::PWM::SPEED_MODE,
-      .channel = AppConfig::PWM::CHANNEL_0,
+      .channel = AppConfig::PWM::CHANNEL,
       .intr_type = AppConfig::PWM::INTR_TYPE,
       .timer_sel = AppConfig::PWM::TIMER,
       .duty = 0,

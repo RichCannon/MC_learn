@@ -8,10 +8,10 @@ static esp_err_t adc_release_del_cali(adc_context *ctx)
 	// Перевірка контексту та масиву калібрування
 	if (ctx == NULL || ctx->cali_handles == NULL)
 	{
-		return ESP_OK;
+		return ESP_ERR_NOT_FOUND;
 	}
 
-	esp_err_t first_err = ESP_OK; // ????
+	esp_err_t first_err = ESP_OK;
 
 	// Перебір усіх ADC каналів
 	for (uint8_t i = 0; i < ctx->channel_count; i++)
@@ -57,9 +57,9 @@ esp_err_t adc_init(adc_context *ctx)
 	//-------------ADC1 Config ---------------
 	// Створення ADC unit + налаштування каналів + створення калібрування
 	adc_oneshot_unit_init_cfg_t init_config = {
-		.unit_id = ctx->unit_id,			// Використання ADC 1 ADC_UNIT_1
-		.clk_src = ADC_RTC_CLK_SRC_DEFAULT, // стандартне джерело CLK
-		.ulp_mode = ADC_ULP_MODE_DISABLE,	// вимкнення режиму ULP
+			.unit_id = ctx->unit_id,						// Використання ADC 1 ADC_UNIT_1
+			.clk_src = ADC_RTC_CLK_SRC_DEFAULT, // стандартне джерело CLK
+			.ulp_mode = ADC_ULP_MODE_DISABLE,		// вимкнення режиму ULP
 	};
 
 	esp_err_t err = adc_oneshot_new_unit(&init_config, &ctx->adc_handle); // Створення дескриптора ADC 1
@@ -69,8 +69,8 @@ esp_err_t adc_init(adc_context *ctx)
 	}
 
 	adc_oneshot_chan_cfg_t config = {
-		.atten = ADC_ATTEN_DB_12,  // Діапазон до ~3.1В
-		.bitwidth = ctx->bitwidth, // Зазвичай 12 біт ADC_BITWIDTH_DEFAULT
+			.atten = ADC_ATTEN_DB_12,	 // Діапазон до ~3.1В
+			.bitwidth = ctx->bitwidth, // Зазвичай 12 біт ADC_BITWIDTH_DEFAULT
 	};
 
 	for (uint8_t i = 0; i < ctx->channel_count; i++)
@@ -92,14 +92,12 @@ esp_err_t adc_init(adc_context *ctx)
 	for (uint8_t i = 0; i < ctx->channel_count; i++)
 	{
 		adc_cali_curve_fitting_config_t cali_config = {
-			.unit_id = ctx->unit_id,
-			.chan = ctx->channels[i],
-			.atten = ADC_ATTEN_DB_12,
-			.bitwidth = ctx->bitwidth,
+				.unit_id = ctx->unit_id,
+				.chan = ctx->channels[i],
+				.atten = ADC_ATTEN_DB_12,
+				.bitwidth = ctx->bitwidth,
 		};
 
-		// ESP_ERROR_CHECK(
-		// 	adc_cali_create_scheme_curve_fitting(&cali_config, &ctx->cali_handles[i]));
 		err = adc_cali_create_scheme_curve_fitting(&cali_config, &ctx->cali_handles[i]);
 		if (err != ESP_OK)
 		{
@@ -143,7 +141,7 @@ esp_err_t adc_read_all_voltage_mv(const adc_context *ctx, int *raw, int *voltage
 
 //------------- Деініціалізації ADC ---------------
 // Видалення калібрування + видалення ADC unit + очищення handle
-esp_err_t adc_deinit(adc_context *ctx) // ???????
+esp_err_t adc_deinit(adc_context *ctx)
 {
 	// Перевірка вказівника на структуру контексту ADC
 	if (ctx == NULL)
@@ -165,7 +163,7 @@ esp_err_t adc_deinit(adc_context *ctx) // ???????
 
 	// Видалення ADC unit
 	esp_err_t err = adc_oneshot_del_unit(ctx->adc_handle);
-	if (first_err == ESP_OK && err != ESP_OK) // ???????
+	if (first_err == ESP_OK && err != ESP_OK)
 	{
 		first_err = err;
 	}
@@ -175,5 +173,5 @@ esp_err_t adc_deinit(adc_context *ctx) // ???????
 	// Зміна стану ADC:
 	ctx->initialized = false;
 
-	return first_err; // ??????
+	return first_err;
 }

@@ -3,8 +3,6 @@
 #include "esp_adc/adc_oneshot.h"
 #include "esp_err.h"
 
-// #include "esp_err.h"
-
 typedef struct
 {
 	adc_unit_t unit_id;

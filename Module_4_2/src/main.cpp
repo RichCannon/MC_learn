@@ -19,12 +19,23 @@ namespace AppConfig
         constexpr uint32_t SPEED = 400000; // 400 kHz
     }
 
-    namespace OLED
+    namespace ADDRESSES
     {
-        constexpr uint32_t ADDRESS = 0x3c;
+        constexpr uint32_t OLED = 0x3c;
     }
 
 };
+
+typedef struct
+{
+    uint8_t s;
+    uint8_t m;
+    uint8_t h;
+    uint8_t W;
+    uint8_t D;
+    uint8_t M;
+    uint8_t Y;
+} DateTime;
 
 typedef enum
 {
@@ -54,7 +65,17 @@ const uint8_t oled_init_cmds[] = {
     0xAF // 4. Увімкнути дисплей (Display ON)
 };
 
+// Команди для повернення курсору
+const uint8_t oled_draw_boundaries[] = {
+    0x21, 0x00, 0x7F, // Колонки від 0 до 127
+    0x22, 0x00, 0x07  //  Сторінки від 0 до 7
+};
+
+const size_t buffer_length = 1024;
+uint8_t buffer[buffer_length] = {0};
+
 const size_t oled_init_cmds_length = sizeof(oled_init_cmds) / sizeof(oled_init_cmds[0]);
+const size_t oled_draw_boundaries_length = sizeof(oled_draw_boundaries) / sizeof(oled_draw_boundaries[0]);
 
 void init_i2c(void)
 {
@@ -77,7 +98,7 @@ void oled_send_cmd(const uint8_t command[], size_t length, OLED_CONTROL_BYTE con
     // Старт
     i2c_master_start(cmd);
     // Адреса
-    i2c_master_write_byte(cmd, (AppConfig::OLED::ADDRESS << 1) | I2C_MASTER_WRITE, true);
+    i2c_master_write_byte(cmd, (AppConfig::ADDRESSES::OLED << 1) | I2C_MASTER_WRITE, true);
     // Відправити "тут буде команда (не графіка)"
     i2c_master_write_byte(cmd, controlByte, true);
     // Записати команду
@@ -90,18 +111,49 @@ void oled_send_cmd(const uint8_t command[], size_t length, OLED_CONTROL_BYTE con
     i2c_cmd_link_delete(cmd);
 }
 
+void oled_show(uint8_t *buffer)
+{
+    oled_send_cmd(oled_draw_boundaries, oled_draw_boundaries_length, OLED_CONTROL_BYTE::SETTINGS);
+    oled_send_cmd(buffer, buffer_length, OLED_CONTROL_BYTE::GRAPHIC);
+}
+
 void oled_clear()
 {
-    size_t size = 1024;
-    uint8_t empty[size] = {0};
-    oled_send_cmd(empty, size, OLED_CONTROL_BYTE::GRAPHIC);
+    uint8_t empty[buffer_length] = {0};
+    oled_send_cmd(empty, buffer_length, OLED_CONTROL_BYTE::GRAPHIC);
+}
+
+void oled_init()
+{
+    oled_send_cmd(oled_init_cmds, oled_init_cmds_length, OLED_CONTROL_BYTE::SETTINGS); // Display ON
+    oled_clear();
+}
+
+void draw_pixel(uint8_t x, uint8_t y, bool on)
+{
+    if (x >= 128 || y >= 64)
+        return;
+    const uint8_t page = y / 8;
+    const uint16_t buffer_el_idx = x + (page * 128);
+    const uint8_t buffer_bit_idx = y % 8;
+
+    if (on)
+    {
+        buffer[buffer_el_idx] = buffer[buffer_el_idx] | (1 << buffer_bit_idx);
+    }
+    else
+    {
+        buffer[buffer_el_idx] = buffer[buffer_el_idx] & ~(1 << buffer_bit_idx);
+    }
 }
 
 extern "C" void app_main(void)
 {
     init_i2c();
-
-    oled_send_cmd(oled_init_cmds, oled_init_cmds_length, OLED_CONTROL_BYTE::SETTINGS); // Display ON
-
-    oled_clear();
+    oled_init();
+    draw_pixel(3, 5, true);
+    draw_pixel(30, 40, true);
+    draw_pixel(100, 50, true);
+    draw_pixel(15, 32, true);
+    oled_show(buffer);
 }

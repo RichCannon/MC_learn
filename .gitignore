@@ -7,14 +7,3 @@
 .vscode/ipch
 **/.DS_Store
 **/managed_components
-**/build/
-**/compile_commands.json
-**/dependencies.lock
-**/STM32CubeIDE/
-**/.mxproject
-**/.cproject
-**/.project
-**/.osx.project
-**/.settings/
-.vscode/settings.json
-**/.vscode/settings.json

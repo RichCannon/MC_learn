@@ -21,6 +21,7 @@ namespace AppConfig
     {
         constexpr uint32_t OLED = 0x3c;
         constexpr uint32_t TIMER = 0x68;
+        constexpr uint32_t BME280 = 0x76;
     }
 
     namespace WiFi

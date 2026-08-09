@@ -23,7 +23,6 @@
 /* USER CODE BEGIN Includes */
 #include <stdint.h>
 #include <string.h>
-#include <stdio.h>
 
 /* USER CODE END Includes */
 
@@ -50,7 +49,16 @@ UART_HandleTypeDef huart2;
 DMA_HandleTypeDef hdma_usart2_tx;
 
 /* USER CODE BEGIN PV */
-uint16_t adc_buffer[1000];
+#define ADC_BUF_LEN     512
+#define ADC_HALF_LEN    (ADC_BUF_LEN / 2)
+#define ADC_VREF_MV        3300
+#define ADC_MAX_VALUE   4095
+#define UART_TX_BUF_LEN 96
+
+static char uart_tx_buf[2][UART_TX_BUF_LEN];
+
+static volatile uint8_t uart_tx_busy = 0;
+static uint16_t adc_buffer[ADC_BUF_LEN];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -67,19 +75,18 @@ static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN 0 */
 
 uint16_t convert_to_mv(uint16_t adc_raw) {
-  uint16_t signal_mv = (3300 * adc_raw)/4095 ;
+  uint16_t signal_mv = (ADC_VREF_MV * adc_raw)/ADC_MAX_VALUE ;
   return signal_mv;
 }
 
-
-void  HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef* hadc) {
-   uint16_t min_adc_value=  0;
+static void ADC_ProcessBlock(const uint16_t *data, uint16_t len) {
+    uint16_t min_adc_value=  0;
   uint16_t max_adc_value=  0;
   uint32_t avg_adc_value=  0;
   uint16_t pp_adc_value = 0;
-    for (size_t i = 0; i < 1000; i++)
+    for (size_t i = 0; i < len; i++)
     {
-      uint16_t current_value = adc_buffer[i];
+      uint16_t current_value = data[i];
       avg_adc_value+=current_value;
       if(i == 0) {
         min_adc_value = current_value;
@@ -93,13 +100,40 @@ void  HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef* hadc) {
         max_adc_value = current_value;
       }
     }
-    avg_adc_value = avg_adc_value / 1000;
+    avg_adc_value = avg_adc_value / ADC_BUF_LEN;
     pp_adc_value = max_adc_value - min_adc_value;
 
-      static char log[80];
-      int len = snprintf(log, 80, "Vmax: %d mV; Vmin: %d mV; Vavg: %d mV; Vpp: %d mV\n", convert_to_mv(max_adc_value), convert_to_mv(min_adc_value), convert_to_mv(avg_adc_value), convert_to_mv(pp_adc_value));
-      HAL_UART_Transmit_DMA(&huart2, (uint8_t *)log, len);
+    static uint8_t buf_idx = 0;
     
+    if(!uart_tx_busy) {
+      char *log = uart_tx_buf[buf_idx];
+      // int len = snprintf(log, 80, "Vmax: %d mV; Vmin: %d mV; Vavg: %d mV; Vpp: %d mV\n", convert_to_mv(max_adc_value), convert_to_mv(min_adc_value), convert_to_mv(avg_adc_value), convert_to_mv(pp_adc_value));
+      // int len = snprintf(log, 80, "Vmax:%d,Vmin:%d,Vavg:%d,Vpp:%d\n", convert_to_mv(max_adc_value), convert_to_mv(min_adc_value), convert_to_mv(avg_adc_value), convert_to_mv(pp_adc_value));
+      int len = snprintf(log, 80, "%d,%d,%d,%d\r\n", convert_to_mv(max_adc_value), convert_to_mv(min_adc_value), convert_to_mv(avg_adc_value), convert_to_mv(pp_adc_value));
+      uart_tx_busy = 1;
+      HAL_UART_Transmit_DMA(&huart2, (uint8_t*)log, len);
+      buf_idx ^= 1;
+    }
+
+    
+} 
+
+void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef *hadc)
+{
+    if (hadc->Instance == ADC1)
+        ADC_ProcessBlock(&adc_buffer[0],ADC_HALF_LEN);
+}
+
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
+{
+    if (hadc->Instance == ADC1)
+        ADC_ProcessBlock(&adc_buffer[ADC_HALF_LEN], ADC_HALF_LEN);
+}
+
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
+{
+    if (huart->Instance == USART2)
+        uart_tx_busy = 0;
 }
 
 
@@ -138,7 +172,7 @@ int main(void)
   MX_ADC1_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
-  HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adc_buffer, 1000);
+  HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adc_buffer, ADC_BUF_LEN);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -146,7 +180,9 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-    
+    // char test_msg[] = "Ini!\n";
+    // HAL_UART_Transmit(&huart2, (uint8_t*)test_msg, 11, 100);
+    // HAL_Delay(1000);
 
     /* USER CODE BEGIN 3 */
   }
@@ -224,7 +260,7 @@ static void MX_ADC1_Init(void)
   hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
   hadc1.Init.NbrOfConversion = 1;
-  hadc1.Init.DMAContinuousRequests = DISABLE;
+  hadc1.Init.DMAContinuousRequests = ENABLE;
   hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
   if (HAL_ADC_Init(&hadc1) != HAL_OK)
   {
